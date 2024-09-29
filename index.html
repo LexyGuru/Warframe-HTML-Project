@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="hu" xmlns="http://www.w3.org/1999/html">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warframe Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+</head>
+<body>
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <h3>Warframe Dashboard</h3>
+  </div>
+  <ul id="menu-items">
+    <!-- Menüpontok dinamikusan generálva -->
+  </ul>
+  <ul id="menu-footer">
+    <p>Posted by @ Miklos Lekszikov</p>
+  </ul>
+</nav>
+
+
+<main id="content">
+  <header>
+    <button id="toggle-sidebar">☰</button>
+    <h1 id="page-title">Warframe Dashboard</h1>
+    <div id="theme-toggle">🌓</div>
+  </header>
+  <div id="data-display">
+    <!-- ... -->
+  </div>
+</main>
+
+<div id="loading-overlay" class="hidden">
+  <div class="loading-spinner"></div>
+</div>
+
+<div id="loading-indicator" class="hidden">Betöltés...</div>
+
+<div id="error-message" class="hidden"></div>
+
+<div id="countdown"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="scripts/localization.js"></script>
+<script src="scripts/script.js"></script>
+
+</body>
+</html>

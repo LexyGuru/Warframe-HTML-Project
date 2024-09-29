@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warframe API Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <main>
+      <div id="search-section">
+        <div class="search-options">
+          <label><input type="checkbox" id="show-prime"> Show Prime Items</label>
+          <label><input type="checkbox" id="show-wiki"> Show Wiki Links</label>
+        </div>
+        <div class="search-box">
+          <select id="platform-select" style="display: none;">
+            <option value="pc">PC</option>
+            <option value="ps4">PS4</option>
+            <option value="xb1">Xbox One</option>
+            <option value="swi">Switch</option>
+          </select>
+          <select id="category-select">
+            <option value="items">Items</option>
+            <option value="rivens">Rivens</option>
+            <option value="arcanes">Arcanes</option>
+            <option value="conclave">Conclave</option>
+            <option value="drops">Drops</option>
+            <option value="events">Events</option>
+            <option value="factions">Factions</option>
+            <option value="fissureModifiers">Fissure Modifiers</option>
+            <option value="missionTypes">Mission Types</option>
+            <option value="mods">Mods</option>
+            <option value="persistentEnemy">Persistent Enemy</option>
+            <option value="sortie">Sortie</option>
+            <option value="syndicates">Syndicates</option>
+            <option value="tutorials">Tutorials</option>
+            <option value="warframes">Warframes</option>
+            <option value="weapons">Weapons</option>
+          </select>
+          <input type="text" id="search-input" placeholder="Search...">
+          <button id="search-button">Search</button>
+          <button id="reset-search" style="display: none;">Reset</button>
+        </div>
+        <div id="results"></div>
+        <!--button id="load-more" style="display: none;">Load More</button-->
+      </div>
+  </main>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <div id="loading-indicator" class="hidden">Betöltés...</div>
+</div>
+</body>
+</html>
