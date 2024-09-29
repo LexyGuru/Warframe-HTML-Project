@@ -11,16 +11,20 @@ const translations = {
         logToggled: 'Log állapota váltva',
         initializationComplete: 'Inicializálás befejezve',
         initializationError: 'Hiba történt az inicializálás során: {error}',
+
         noAvailableNews: 'Nincs elérhető hír.',
         noAvailableInvasion: 'Nincs elérhető invázió.',
         noAvailableFissure: 'Nincs elérhető Fissure.',
         noAvailableAlert: 'Nincs elérhető riadó.',
         noAvailableConclave: 'Nincs elérhető Conclave kihívás.',
+        noAvailableFlashSales: 'Nincs elérhető Villám Akciók.',
+
         invalidTime: 'Érvénytelen idő',
         arrived: 'MEGÉRKEZETT!',
         departed: 'Eltávozott',
         expired: 'Lejárt',
         unavailable: 'Nem elérhető',
+
         menuRefreshStart: 'Menü frissítése kezdődik',
         menuRefreshComplete: 'Menü frissítése befejezve',
         menuItemSelected: 'Menüpont kiválasztva: {key}',
@@ -89,12 +93,15 @@ const translations = {
         archonHuntRewardPool: "Jutalom készlet",
         archonHuntExpiry: "Lejárat",
         archonHuntMissions: "Küldetések",
-
-// Új fordítások a script.js-ből meg nincs hozzäadva a js-hez
-        constructionProgressTitle: "Építési Folyamat",
-        fomorian: "Fomorian",
-        razorback: "Razorback",
-        unknown: "Ismeretlen",
+        flashSalesTitle: "Villám Akciók",
+        flashSalesItem: "Tárgy",
+        flashSalesActivation: "Aktiválás",
+        flashSalesExpiry: "Lejárat",
+        sortieTitle: "Sortie",
+        sortieBoss: "Boss",
+        sortieFaction: "Frakció",
+        sortieExpiry: "Lejárat",
+        sortieVariants: "Variánsok",
         vaultTraderTitle: "Vault Trader",
         vaultTraderLocation: "Helyszín",
         vaultTraderStatus: "Állapot",
@@ -105,6 +112,13 @@ const translations = {
         vaultTraderCurrentInventory: "Jelenlegi készlet",
         vaultTraderFutureSchedule: "Jövőbeli ütemezés",
         vaultTraderUnknownItem: "Ismeretlen elem",
+
+// Új fordítások a script.js-ből meg nincs hozzäadva a js-hez
+        constructionProgressTitle: "Építési Folyamat",
+        fomorian: "Fomorian",
+        razorback: "Razorback",
+        unknown: "Ismeretlen",
+
 
         sentientOutpostsTitle: "Sentient Támaszpontok",
         sentientOutpostsActivation: "Aktiválás",
@@ -125,11 +139,9 @@ const translations = {
         nightwaveActivation: "Aktiválás",
         nightwaveExpiry: "Lejárat",
         nightwaveActiveChallenges: "Aktív Kihívások",
-        sortieTitle: "Sortie",
-        sortieBoss: "Főnök",
-        sortieFaction: "Frakció",
-        sortieExpiry: "Lejárat",
-        sortieVariants: "Variánsok",
+
+
+
         steelPathTitle: "Acél Ösvény",
         steelPathActivation: "Aktiválás",
         steelPathExpiry: "Lejárat",
@@ -138,10 +150,9 @@ const translations = {
         steelPathEvergreenRewards: "Állandó Jutalmak",
         cycleState: "Állapot",
         cycleTimeLeft: "Hátralévő idő",
-        flashSalesTitle: "Villám Akciók",
-        flashSalesItem: "Tárgy",
-        flashSalesActivation: "Aktiválás",
-        flashSalesExpiry: "Lejárat",
+
+
+
         fissuresTitle: "Hasadékok",
         fissuresNode: "Csomópont",
         fissuresMissionType: "Küldetés típus",

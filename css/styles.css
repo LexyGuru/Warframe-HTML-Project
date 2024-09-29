@@ -651,6 +651,78 @@ h1 {
 }
 
 /* ************************************************************* */
+/* ********************* displayFlashSales ********************* */
+/* ************************************************************* */
+
+.FlashSales-container {
+    margin-bottom: var(--spacing-medium);
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.FlashSales-container h2 {
+    color: #00ffff;
+}
+
+.flash-sale-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.flash-sale-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+/* ************************************************************* */
+/* ********************* displayArchonHunt ********************* */
+/* ************************************************************* */
+
+.sortie-container {
+    margin-bottom: var(--spacing-medium);
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.sortie-container h2 {
+    color: #00ffff;
+}
+
+/* ************************************************************* */
+/* ********************* displaysimaris ********************* */
+/* ************************************************************* */
+
+.Simaris-container {
+    margin-bottom: var(--spacing-medium);
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.Simaris-container h2 {
+    color: #00ffff;
+}
+
+/* ************************************************************* */
+/* ********************* displaysimaris ********************* */
+/* ************************************************************* */
+
+.VaultTrader-container {
+    margin-bottom: var(--spacing-medium);
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.VaultTrader-container h2 {
+    color: #00ffff;
+}
+
+/* ************************************************************* */
 
 @media (max-width: 768px) {
     body {

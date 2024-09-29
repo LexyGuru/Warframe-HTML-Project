@@ -61,7 +61,7 @@ const CONFIG = {
         url: 'search.html'
     }
 };
-/*https://api.warframestat.us/pc/zarimanCycle/*/
+
 const relevantFields = {
     arbitration: ['node', 'enemy', 'type', 'expiry'],
     invasions: ['node', 'desc', 'attackingFaction', 'defendingFaction', 'completion'],
@@ -78,11 +78,10 @@ const relevantFields = {
     vallisCycle: ['state', 'timeLeft'],
     cambionCycle: ['state', 'timeLeft', 'active'],
     zarimanCycle: ['state', 'timeLeft', 'shortString'],
-    flashSales: ['item', 'isShownInMarket', 'activation', 'expiry'],
+    flashSales: ['item', 'isShownInMarket', 'expiry'],
     steelPath: ['activation', 'expiry', 'remaining', 'rotation', 'evergreens'],
     conclaveChallenges: ['id', 'description', 'title', 'standing', 'endString', 'asString']
 };
-
 
 const dateCache = new Map();
 const BASE_URL = CONFIG.BASE_URL;
@@ -173,7 +172,6 @@ function normalizeTimeLeft(timeLeftString) {
     return timeLeftString;
 }
 
-
 function log(message) {
     if (message === WarframeData.getLastLogMessage()) return;
     WarframeData.setLastLogMessage(message);
@@ -232,53 +230,6 @@ function handleTraderTime(date, type) {
     }
 }
 
-async function fetchEndpoint(endpoint) {
-    try {
-        const now = Date.now();
-        if (WarframeData.getLastFetchTime(endpoint) && now - WarframeData.getLastFetchTime(endpoint) < 60000) {
-            console.log(`Skipping fetch for ${endpoint}, last fetch was recent.`);
-            return WarframeData.getData(endpoint);
-        }
-
-        console.log(`Fetching data for ${endpoint}...`);
-        const response = await fetch(`${BASE_URL}/${endpoint}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log(`Data received for ${endpoint}:`, data);
-
-
-        if (CONFIG.CYCLE_ENDPOINTS.includes(endpoint)) {
-            // Ciklusok esetében csak a timeLeft és state értékeket tároljuk
-            WarframeData.setData(endpoint, {
-                state: data.state,
-                timeLeft: normalizeTimeLeft(data.timeLeft)
-            });
-        } else {
-            if (endpoint === 'sentientOutposts') {
-                const dataDate = Math.max(
-                    parseDate(data.activation)?.getTime() || 0,
-                    parseDate(data.expiry)?.getTime() || 0
-                );
-                if (now - dataDate > 24 * 60 * 60 * 1000) {
-                    log(`Figyelmeztetés: A SentientOutposts adatok elavultak lehetnek.`);
-                }
-            }
-            WarframeData.setData(endpoint, data);
-        }
-
-        WarframeData.setLastFetchTime(endpoint, now);
-        log(`${endpoint} adatok sikeresen frissítve`);
-        return WarframeData.getData(endpoint);
-    } catch (error) {
-        console.error(`Error fetching ${endpoint}:`, error);
-        log(`Hiba a(z) ${endpoint} adatok lekérése közben: ${error.message}`);
-        return null;
-    }
-}
-
-
 function updateDisplay(endpoint) {
     const activeElement = document.querySelector('#menu-items li.active');
     const selectedKey = activeElement ? activeElement.textContent.toLowerCase() : '';
@@ -332,44 +283,6 @@ function updateMenu() {
     log('Menü frissítése befejezve');
 }
 
-// Új függvény az egyéni tartalom megjelenítéséhez
-async function displayCustomContent() {
-    const displayArea = document.getElementById('data-display');
-    displayArea.innerHTML = '<div class="loading-spinner"></div>';
-
-    try {
-        const response = await fetch(CONFIG.CUSTOM_MENU_ITEM.url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const content = await response.text();
-        displayArea.innerHTML = `<div class="fade-in slide-in">${content}</div>`;
-
-        // Egyéni CSS betöltése
-        const customCSS = document.createElement('link');
-        customCSS.rel = 'stylesheet';
-        customCSS.href = 'css/styles_search.css';
-        document.head.appendChild(customCSS);
-
-        // jQuery betöltése
-        await new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-            script.onload = resolve;
-            script.onerror = reject;
-            document.body.appendChild(script);
-        });
-
-        // Egyéni JavaScript betöltése
-        const customJS = document.createElement('script');
-        customJS.src = 'scripts/search.js';
-        document.body.appendChild(customJS);
-    } catch (error) {
-        console.error('Hiba az egyéni tartalom betöltése közben:', error);
-        displayArea.innerHTML = `<p>Hiba történt az egyéni tartalom betöltése közben: ${error.message}</p>`;
-    }
-}
-
 function createMenuItem(key, activeItemText) {
     const li = document.createElement('li');
     li.textContent = key.charAt(0).toUpperCase() + key.slice(1);
@@ -414,11 +327,14 @@ function checkCountdowns() {
     });
 }
 
-function displaySelectedData(selectedKey) {
-  const displayArea = document.getElementById('data-display');
-  displayArea.innerHTML = '';
 
-  const data = WarframeData.getData(selectedKey);
+/*****************************************************************************************************/
+// Megjelenitesi dolgok
+function displaySelectedData(selectedKey) {
+    const displayArea = document.getElementById('data-display');
+    displayArea.innerHTML = '';
+
+    const data = WarframeData.getData(selectedKey);
 
     if (data === null || data === undefined || (Array.isArray(data) && data.length === 0)) {
         displayArea.innerHTML = `<div class="fade-in slide-in">${window.Localization.getTranslation('noAvailableData')}</div>`;
@@ -468,11 +384,27 @@ function displaySelectedData(selectedKey) {
 
         // Dupla szöveg törlese
         if (selectedKey === 'sentientOutposts') {
-          content = displaySentientOutposts(data, 0);
+            content = displaySentientOutposts(data, 0);
         }
 
         if (selectedKey === 'archonHunt') {
-          content = displayArchonHunt(data, 0);
+            content = displayArchonHunt(data, 0);
+        }
+
+        if (selectedKey === 'flashSales') {
+            content = displayFlashSales(data);
+        }
+
+        if (selectedKey === 'sortie') {
+            content = displaySortie(data, 0);
+        }
+
+        if (selectedKey === 'simaris') {
+            content = displaySimaris(data, 0);
+        }
+
+        if (selectedKey === 'simaris') {
+            content = displaySimaris(data, 0);
         }
 
         // Animáció hozzáadása
@@ -608,7 +540,6 @@ function displayDailyDeals(item) {
     `;
 }
 
-
 function displaySentientOutposts(item, index) {
     console.log('Data received for', item); // Debug log
     return `
@@ -659,15 +590,18 @@ function displayNightwave(item, index) {
 
 function displaySortie(item, index) {
     return `
-        <p><strong>Boss:</strong> ${item.boss}</p>
-        <p><strong>Faction:</strong> ${item.faction}</p>
-        <p><strong>Expiry:</strong> <span id="sortie-countdown-${index}" class="countdown" data-time="${item.expiry}">${item.expiry}</span></p>
-        <h4>Variants:</h4>
-        <ul>
-            ${item.variants.map(variant => `
-                <li>${variant.missionType} - ${variant.modifier} (${variant.node})</li>
-            `).join('')}
-        </ul>
+        <div class="sortie-container">
+            <h2>${window.Localization.getTranslation('sortieTitle')}</h2>
+            <p><strong>${window.Localization.getTranslation('sortieBoss')}:</strong> ${item.boss}</p>
+            <p><strong>${window.Localization.getTranslation('sortieFaction')}:</strong> ${item.faction}</p>
+            <p><strong>${window.Localization.getTranslation('sortieExpiry')}:</strong> <span id="sortie-countdown-${index}" class="countdown" data-time="${item.expiry}">${item.expiry}</span></p>
+            <h4>${window.Localization.getTranslation('sortieVariants')}:</h4>
+            <ul>
+                ${item.variants.map(variant => `
+                    <li>${variant.missionType} - ${variant.modifier} (${variant.node})</li>
+                `).join('')}
+            </ul>
+        </div>
     `;
 }
 
@@ -694,22 +628,6 @@ function displayCycle(item, type) {
     let bgColor = 'rgba(128, 128, 128, 0.1)';  // Alapértelmezett szürke háttér
     let state = item.state || 'Unknown';  // Ha nincs state, akkor 'Unknown'-t használunk
 
-    /*
-
-    <img src="https://static.wikia.nocookie.net/warframe/images/6/63/TennoIcon.png/revision/latest/scale-to-width-down/32?cb=20230104015820"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/8/8a/IconGrineerOn.png/revision/latest/scale-to-width-down/32?cb=20221231002702"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/b/b2/IconCorpusOn.png/revision/latest/scale-to-width-down/32?cb=20240906232445"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/e/ea/Infestation_w.svg/revision/latest/scale-to-width-down/32?cb=20220401160938"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/f/f8/SentientFactionIcon.png/revision/latest/scale-to-width-down/32?cb=20150805015325"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/a/a1/StalkerSigil.png/revision/latest/scale-to-width-down/32?cb=20150101224351"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/c/c6/IconNarmer.png/revision/latest/scale-to-width-down/32?cb=20220513060129"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/b/b7/MurmurIcon.png/revision/latest/scale-to-width-down/32?cb=20240326045206"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/2/2a/IconOrokinOn.png/revision/latest/scale-to-width-down/32?cb=20210826000807"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/e/ef/ReputationLarge.png/revision/latest/scale-to-width-down/32?cb=20141029201704"></img>
-    <img src="https://static.wikia.nocookie.net/warframe/images/c/c0/IconWild.png/revision/latest/scale-to-width-down/32?cb=20210821074945"></img>
-
-    */
-
     if (item && item.state) {
         const lowerState = item.state.toLowerCase();
 
@@ -728,8 +646,8 @@ function displayCycle(item, type) {
                 bgColor = lowerState === 'vome' ? 'rgba(0, 0, 255, 0.1)' : 'rgba(255, 0, 0, 0.1)';
                 break;
             case 'zarimanCycle':
-                icon = lowerState.includes('incarnon') ? '⚔️' : '🛡️';
-                icon = lowerState.includes('incarnon') ? '<img src="https://static.wikia.nocookie.net/warframe/images/8/8a/IconGrineerOn.png">' : '<img src="https://static.wikia.nocookie.net/warframe/images/b/b2/IconCorpusOn.png">';
+                //icon = lowerState.includes('incarnon') ? '⚔️' : '🛡️';
+                icon = lowerState.includes('incarnon') ? '<img src="https://static.wikia.nocookie.net/warframe/images/8/8a/IconGrineerOn.png" width="50" height="auto">' : '<img src="https://static.wikia.nocookie.net/warframe/images/b/b2/IconCorpusOn.png" width="50" height="auto">';
                 bgColor = lowerState.includes('incarnon') ? 'rgba(255, 0, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)';
                 break;
         }
@@ -782,11 +700,23 @@ function updateCycleCountdown(elementId, timeLeft) {
     updateTime();
 }
 
-function displayFlashSales(item, index) {
+function displayFlashSales(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+        return `<p>${window.Localization.getTranslation('noAvailableFlashSales')}</p>`;
+    }
+
+    console.log('Data received for', items); // Debug log
+
     return `
-        <p><strong>Item:</strong> ${item.item}</p>
-        <p><strong>Aktiválás:</strong> <span id="flashsale-activation-countdown-${index}" class="countdown" data-time="${item.activation}">${formatDate(parseDate(item.activation))}</span></p>
-        <p><strong>Lejár:</strong> <span id="flashsale-expiry-countdown-${index}" class="countdown" data-time="${item.expiry}">${formatDate(parseDate(item.expiry))}</span></p>
+        <div class="FlashSales-container">
+            <h2>${window.Localization.getTranslation('flashSalesTitle')}</h2>
+            ${items.map((item, index) => `
+                <div class="flash-sale-item">
+                    <p><strong>${window.Localization.getTranslation('flashSalesItem')}:</strong> ${item.item}</p>
+                    <p><strong>${window.Localization.getTranslation('flashSalesExpiry')}:</strong> <span id="flashsale-expiry-countdown-${index}" class="countdown" data-time="${item.expiry}">${formatDate(parseDate(item.expiry))}</span></p>
+                </div>
+            `).join('')}
+        </div>
     `;
 }
 
@@ -922,48 +852,50 @@ function displayVaultTrader(item) {
     const activationDate = parseDate(item.activation);
     const expiryDate = parseDate(item.expiry);
 
+
     let content = `
-        <h2>Vault Trader</h2>
-        <p><strong>Helyszín:</strong> ${item.location || 'N/A'}</p>
-        <p><strong>Állapot:</strong> ${item.active ? 'Aktív' : 'Inaktív'}</p>
+    <div class="VaultTrader-container">
+        <h2>${window.Localization.getTranslation('vaultTraderTitle')}</h2>
+        <p><strong>${window.Localization.getTranslation('vaultTraderLocation')}:</strong> ${item.location || 'N/A'}</p>
+        <p><strong>${window.Localization.getTranslation('vaultTraderStatus')}:</strong> ${item.active ? window.Localization.getTranslation('vaultTraderActive') : window.Localization.getTranslation('vaultTraderInactive')}</p>
+
     `;
 
     if (activationDate > now) {
-        content += `<p><strong>Aktiválás:</strong> <span id="vaulttrader-activation-countdown" class="countdown" data-time="${item.activation}">${formatDate(activationDate)}</span></p>`;
+        content += `<p><strong>${window.Localization.getTranslation('vaultTraderActivation')}:</strong> <span id="vaulttrader-activation-countdown" class="countdown" data-time="${item.activation}">${formatDate(activationDate)}</span></p>`;
     }
 
     if (expiryDate > now) {
-        content += `<p><strong>Lejárat:</strong> <span id="vaulttrader-expiry-countdown" class="countdown" data-time="${item.expiry}">${formatDate(expiryDate)}</span></p>`;
+        content += `<p><strong>${window.Localization.getTranslation('vaultTraderExpiry')}:</strong> <span id="vaulttrader-expiry-countdown" class="countdown" data-time="${item.expiry}">${formatDate(expiryDate)}</span></p>`;
     }
 
     if (item.active) {
         content += `
-            <h3>Jelenlegi készlet:</h3>
+            <h3>${window.Localization.getTranslation('vaultTraderCurrentInventory')}:</h3>
             <ul>
                 ${item.inventory.map(inv => `
-                    <li><strong>${inv.item}</strong> ${inv.ducats !== null ? `Ducats: ${inv.ducats},` : ''} ${inv.credits !== null ? `Kredit: ${inv.credits}` : 'N/A'}</li>
+                    <li><strong>${inv.item}</strong> ${inv.ducats !== null ? `Ducats: ${inv.ducats},` : ''} ${inv.credits !== null ? `${window.Localization.getTranslation('credits')}: ${inv.credits}` : 'N/A'}</li>
                 `).join('')}
             </ul>
         `;
     }
 
     content += `
-        <h3>Jövőbeli ütemezés:</h3>
+        <h3>${window.Localization.getTranslation('vaultTraderFutureSchedule')}:</h3>
         <ul>
             ${item.schedule.filter(sch => parseDate(sch.expiry) > now).map((sch, index) => {
                 const scheduleDate = parseDate(sch.expiry);
                 return `
                     <li>
-                        <strong>${sch.item || 'Ismeretlen elem'}</strong> -
-                        Lejárat: <span id="vaulttrader-schedule-${index}-countdown" class="countdown" data-time="${sch.expiry}">${formatDate(scheduleDate)}</span>
+                        <strong>${sch.item || window.Localization.getTranslation('vaultTraderUnknownItem')}</strong> -
+                        ${window.Localization.getTranslation('vaultTraderExpiry')}: <span id="vaulttrader-schedule-${index}-countdown" class="countdown" data-time="${sch.expiry}">${formatDate(scheduleDate)}</span>
                     </li>
                 `;
             }).join('')}
         </ul>
     `;
-
     return content;
-}
+    }
 
 function handleVoidTraderTime(date, type) {
     const now = new Date();
@@ -977,9 +909,12 @@ function handleVoidTraderTime(date, type) {
 
 function displaySimaris(item) {
     return `
-        <p><strong>Target:</strong> ${item.target}</p>
-        <p><strong>Is Target Active:</strong> ${item.isTargetActive ? 'Yes' : 'No'}</p>
-        <p><strong>Status:</strong> ${item.asString}</p>
+        <div class="Simaris-container">
+            <h2>${window.Localization.getTranslation('simarisTitle')}</h2>
+            <p><strong>${window.Localization.getTranslation('simarisTarget')}:</strong> ${item.target}</p>
+            <p><strong>${window.Localization.getTranslation('simarisTargetActive')}:</strong> ${item.isTargetActive ? 'Yes' : 'No'}</p>
+            <p><strong>${window.Localization.getTranslation('simarisStatus')}:</strong> ${item.asString}</p>
+        </div>
     `;
 }
 
@@ -1175,7 +1110,6 @@ function initCycles() {
     });
 }
 
-
 function updateCycleDisplay(cycleType) {
     const activeElement = document.querySelector('#menu-items li.active');
     const selectedKey = activeElement ? activeElement.textContent.toLowerCase() : '';
@@ -1225,28 +1159,6 @@ function updateEventCountdown(elementId, endTime, type) {
     updateTime();
 }
 
-async function fetchNews() {
-    try {
-        const response = await fetch(`${BASE_URL}/news`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Fetched news data:', data); // Naplózás ellenőrzéshez
-        if (!Array.isArray(data) || data.length === 0) {
-            console.warn('News data is empty or not an array');
-            return [];
-        }
-        WarframeData.setData('news', data);
-        log('News adatok sikeresen frissítve');
-        return data;
-    } catch (error) {
-        console.error('Hiba a news lekérése közben:', error);
-        log(`Hiba a news lekérése közben: ${error.message}`);
-        return [];
-    }
-}
-
 function displayNews(items) {
     console.log('Displaying news items:', items); // Naplózás ellenőrzéshez
     if (!Array.isArray(items) || items.length === 0) {
@@ -1262,57 +1174,6 @@ function displayNews(items) {
             <p><strong>${getTranslation('date')}:</strong> ${formatDate(parseDate(item.date)) || getTranslation('dateNotAvailable')}</p>
         </div>
     `).join('');
-}
-
-async function refreshCycleData(cycleType) {
-    log(`${cycleType} adatok frissítése kezdődik...`);
-    let retryCount = 0;
-    const maxRetries = 3;
-    const retryDelay = 30000; // 30 másodperc
-
-    async function attemptRefresh() {
-        try {
-            const data = await fetchEndpoint(cycleType);
-            if (data && data.timeLeft) {
-                WarframeData.setData(cycleType, data);
-                updateCycleDisplay(cycleType);
-                log(`${cycleType} adatok sikeresen frissítve`);
-            } else {
-                throw new Error('Nincs adat');
-            }
-        } catch (error) {
-            console.error(`Hiba a ${cycleType} frissítése során:`, error);
-            log(`Hiba a ${cycleType} frissítése során: ${error.message}`);
-            WarframeData.setData(cycleType, null);
-
-            if (retryCount < maxRetries) {
-                retryCount++;
-                log(`Újrapróbálkozás ${retryCount}/${maxRetries} ${retryDelay / 1000} másodperc múlva...`);
-                setTimeout(attemptRefresh, retryDelay);
-            } else {
-                log(`${cycleType} frissítése sikertelen ${maxRetries} próbálkozás után.`);
-            }
-        }
-    }
-
-    await attemptRefresh();
-}
-
-async function refreshEndpoint(type) {
-    try {
-        const newData = await fetchEndpoint(type);
-        if (newData) {
-            WarframeData.setData(type, newData);
-            const activeElement = document.querySelector('#menu-items li.active');
-            const selectedKey = activeElement ? activeElement.textContent.toLowerCase() : '';
-            if (selectedKey === type) {
-                displaySelectedData(type);
-            }
-        }
-        log(`${type} adatok automatikusan frissítve`);
-    } catch (error) {
-        handleError(error, `${type} auto refresh`);
-    }
 }
 
 function toggleTheme() {
@@ -1382,33 +1243,6 @@ function handleNullValue(value, prefix = '') {
     return value !== null ? `${prefix}${value}` : 'N/A';
 }
 
-async function fetchAllData() {
-    showLoading();
-    log('Összes adat lekérése kezdődik...');
-    try {
-        const fetchPromises = [...CONFIG.ENDPOINTS, ...CONFIG.CYCLE_ENDPOINTS].map(endpoint => fetchEndpoint(endpoint));
-        await Promise.all(fetchPromises);
-
-        // News külön kezelése
-        const newsData = await fetchNews();
-        WarframeData.setData('news', newsData);
-
-        updateMenu();
-        log('Összes adat sikeresen lekérve');
-
-        // Frissítsük az aktuálisan kiválasztott nézetet
-        const activeElement = document.querySelector('#menu-items li.active');
-        if (activeElement) {
-            const selectedKey = activeElement.textContent.toLowerCase();
-            displaySelectedData(selectedKey);
-        }
-    } catch (error) {
-        handleError(error, 'fetchAllData');
-    } finally {
-        hideLoading();
-    }
-}
-
 function init() {
     log('DOM betöltve, inicializálás kezdődik');
     try {
@@ -1440,13 +1274,11 @@ function init() {
     }
 }
 
-
 function initCycles() {
     CONFIG.CYCLE_ENDPOINTS.forEach(cycleType => {
         setInterval(() => refreshCycleData(cycleType), 60000); // Frissítés percenként
     });
 }
-
 
 function initMenu() {
     const menu = document.getElementById('sidebar');
@@ -1493,30 +1325,11 @@ function initMenu() {
             document.querySelector('main')?.scrollIntoView({ behavior: 'smooth' });
         });
     }
-
-    /*/ Érintés alapú görgetés kezelése
-    let touchStartY = 0;
-    menu.addEventListener('touchstart', (e) => {
-        touchStartY = e.touches[0].clientY;
-    });
-
-    menu.addEventListener('touchmove', (e) => {
-        const touchY = e.touches[0].clientY;
-        const scrollTop = menu.scrollTop;
-        const scrollHeight = menu.scrollHeight;
-        const clientHeight = menu.clientHeight;
-
-        // Felfelé görgetés megakadályozása a menü tetejénél
-        if (scrollTop === 0 && touchY > touchStartY) {
-            e.preventDefault();
-        }
-
-        // Lefelé görgetés megakadályozása a menü aljánál
-        if (scrollTop + clientHeight >= scrollHeight && touchY < touchStartY) {
-            e.preventDefault();
-        }
-    });*/
 }
+
+
+/*****************************************************************************************************/
+// async fügvenyek
 
 async function loadAllData() {
   showLoadingIndicator();
@@ -1534,6 +1347,192 @@ async function loadAllData() {
   }
 }
 
+async function fetchAllData() {
+    showLoading();
+    log('Összes adat lekérése kezdődik...');
+    try {
+        const fetchPromises = [...CONFIG.ENDPOINTS, ...CONFIG.CYCLE_ENDPOINTS].map(endpoint => fetchEndpoint(endpoint));
+        await Promise.all(fetchPromises);
+
+        // News külön kezelése
+        const newsData = await fetchNews();
+        WarframeData.setData('news', newsData);
+
+        updateMenu();
+        log('Összes adat sikeresen lekérve');
+
+        // Frissítsük az aktuálisan kiválasztott nézetet
+        const activeElement = document.querySelector('#menu-items li.active');
+        if (activeElement) {
+            const selectedKey = activeElement.textContent.toLowerCase();
+            displaySelectedData(selectedKey);
+        }
+    } catch (error) {
+        handleError(error, 'fetchAllData');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function refreshEndpoint(type) {
+    try {
+        const newData = await fetchEndpoint(type);
+        if (newData) {
+            WarframeData.setData(type, newData);
+            const activeElement = document.querySelector('#menu-items li.active');
+            const selectedKey = activeElement ? activeElement.textContent.toLowerCase() : '';
+            if (selectedKey === type) {
+                displaySelectedData(type);
+            }
+        }
+        log(`${type} adatok automatikusan frissítve`);
+    } catch (error) {
+        handleError(error, `${type} auto refresh`);
+    }
+}
+
+async function refreshCycleData(cycleType) {
+    log(`${cycleType} adatok frissítése kezdődik...`);
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 30000; // 30 másodperc
+
+    async function attemptRefresh() {
+        try {
+            const data = await fetchEndpoint(cycleType);
+            if (data && data.timeLeft) {
+                WarframeData.setData(cycleType, data);
+                updateCycleDisplay(cycleType);
+                log(`${cycleType} adatok sikeresen frissítve`);
+            } else {
+                throw new Error('Nincs adat');
+            }
+        } catch (error) {
+            console.error(`Hiba a ${cycleType} frissítése során:`, error);
+            log(`Hiba a ${cycleType} frissítése során: ${error.message}`);
+            WarframeData.setData(cycleType, null);
+
+            if (retryCount < maxRetries) {
+                retryCount++;
+                log(`Újrapróbálkozás ${retryCount}/${maxRetries} ${retryDelay / 1000} másodperc múlva...`);
+                setTimeout(attemptRefresh, retryDelay);
+            } else {
+                log(`${cycleType} frissítése sikertelen ${maxRetries} próbálkozás után.`);
+            }
+        }
+    }
+
+    await attemptRefresh();
+}
+
+async function fetchNews() {
+    try {
+        const response = await fetch(`${BASE_URL}/news`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fetched news data:', data); // Naplózás ellenőrzéshez
+        if (!Array.isArray(data) || data.length === 0) {
+            console.warn('News data is empty or not an array');
+            return [];
+        }
+        WarframeData.setData('news', data);
+        log('News adatok sikeresen frissítve');
+        return data;
+    } catch (error) {
+        console.error('Hiba a news lekérése közben:', error);
+        log(`Hiba a news lekérése közben: ${error.message}`);
+        return [];
+    }
+}
+
+async function fetchEndpoint(endpoint) {
+    try {
+        const now = Date.now();
+        if (WarframeData.getLastFetchTime(endpoint) && now - WarframeData.getLastFetchTime(endpoint) < 60000) {
+            console.log(`Skipping fetch for ${endpoint}, last fetch was recent.`);
+            return WarframeData.getData(endpoint);
+        }
+
+        console.log(`Fetching data for ${endpoint}...`);
+        const response = await fetch(`${BASE_URL}/${endpoint}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log(`Data received for ${endpoint}:`, data);
+
+
+        if (CONFIG.CYCLE_ENDPOINTS.includes(endpoint)) {
+            // Ciklusok esetében csak a timeLeft és state értékeket tároljuk
+            WarframeData.setData(endpoint, {
+                state: data.state,
+                timeLeft: normalizeTimeLeft(data.timeLeft)
+            });
+        } else {
+            if (endpoint === 'sentientOutposts') {
+                const dataDate = Math.max(
+                    parseDate(data.activation)?.getTime() || 0,
+                    parseDate(data.expiry)?.getTime() || 0
+                );
+                if (now - dataDate > 24 * 60 * 60 * 1000) {
+                    log(`Figyelmeztetés: A SentientOutposts adatok elavultak lehetnek.`);
+                }
+            }
+            WarframeData.setData(endpoint, data);
+        }
+
+        WarframeData.setLastFetchTime(endpoint, now);
+        log(`${endpoint} adatok sikeresen frissítve`);
+        return WarframeData.getData(endpoint);
+    } catch (error) {
+        console.error(`Error fetching ${endpoint}:`, error);
+        log(`Hiba a(z) ${endpoint} adatok lekérése közben: ${error.message}`);
+        return null;
+    }
+}
+
+// Új függvény az egyéni tartalom megjelenítéséhez
+async function displayCustomContent() {
+    const displayArea = document.getElementById('data-display');
+    displayArea.innerHTML = '<div class="loading-spinner"></div>';
+
+    try {
+        const response = await fetch(CONFIG.CUSTOM_MENU_ITEM.url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const content = await response.text();
+        displayArea.innerHTML = `<div class="fade-in slide-in">${content}</div>`;
+
+        // Egyéni CSS betöltése
+        const customCSS = document.createElement('link');
+        customCSS.rel = 'stylesheet';
+        customCSS.href = 'css/styles_search.css';
+        document.head.appendChild(customCSS);
+
+        // jQuery betöltése
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.body.appendChild(script);
+        });
+
+        // Egyéni JavaScript betöltése
+        const customJS = document.createElement('script');
+        customJS.src = 'scripts/search.js';
+        document.body.appendChild(customJS);
+    } catch (error) {
+        console.error('Hiba az egyéni tartalom betöltése közben:', error);
+        displayArea.innerHTML = `<p>Hiba történt az egyéni tartalom betöltése közben: ${error.message}</p>`;
+    }
+}
+
+/*****************************************************************************************************/
+
 document.getElementById('toggle-sidebar').addEventListener('click', () => {
     toggleMenu();
     log('Menü állapota váltva');
@@ -1550,7 +1549,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function updateUITranslations() {
+    document.querySelectorAll('[data-translation-key]').forEach(element => {
+        const key = element.getAttribute('data-translation-key');
+        element.textContent = window.Localization.getTranslation(key);
+    });
+}
 
+// Hívjuk meg ezt a függvényt az oldal betöltésekor és nyelvváltáskor
+document.addEventListener('DOMContentLoaded', updateUITranslations);
 document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('DOMContentLoaded', initMenu);
 //document.documentElement.style.setProperty('--sentient-bg-color', 'rgba(255, 0, 0, 0.1)');
+
+
+
+
+/*
+
+<img src="https://static.wikia.nocookie.net/warframe/images/6/63/TennoIcon.png/revision/latest/scale-to-width-down/32?cb=20230104015820"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/8/8a/IconGrineerOn.png/revision/latest/scale-to-width-down/32?cb=20221231002702"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/b/b2/IconCorpusOn.png/revision/latest/scale-to-width-down/32?cb=20240906232445"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/e/ea/Infestation_w.svg/revision/latest/scale-to-width-down/32?cb=20220401160938"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/f/f8/SentientFactionIcon.png/revision/latest/scale-to-width-down/32?cb=20150805015325"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/a/a1/StalkerSigil.png/revision/latest/scale-to-width-down/32?cb=20150101224351"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/c/c6/IconNarmer.png/revision/latest/scale-to-width-down/32?cb=20220513060129"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/b/b7/MurmurIcon.png/revision/latest/scale-to-width-down/32?cb=20240326045206"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/2/2a/IconOrokinOn.png/revision/latest/scale-to-width-down/32?cb=20210826000807"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/e/ef/ReputationLarge.png/revision/latest/scale-to-width-down/32?cb=20141029201704"></img>
+<img src="https://static.wikia.nocookie.net/warframe/images/c/c0/IconWild.png/revision/latest/scale-to-width-down/32?cb=20210821074945"></img>
+
+
+
+https://api.tenno.tools/worldstate/pc
+*/
+
