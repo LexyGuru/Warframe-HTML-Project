@@ -119,7 +119,6 @@ const translations = {
         razorback: "Razorback",
         unknown: "Ismeretlen",
 
-
         sentientOutpostsTitle: "Sentient Támaszpontok",
         sentientOutpostsActivation: "Aktiválás",
         sentientOutpostsExpiry: "Lejárat",
@@ -139,9 +138,6 @@ const translations = {
         nightwaveActivation: "Aktiválás",
         nightwaveExpiry: "Lejárat",
         nightwaveActiveChallenges: "Aktív Kihívások",
-
-
-
         steelPathTitle: "Acél Ösvény",
         steelPathActivation: "Aktiválás",
         steelPathExpiry: "Lejárat",
@@ -150,9 +146,6 @@ const translations = {
         steelPathEvergreenRewards: "Állandó Jutalmak",
         cycleState: "Állapot",
         cycleTimeLeft: "Hátralévő idő",
-
-
-
         fissuresTitle: "Hasadékok",
         fissuresNode: "Csomópont",
         fissuresMissionType: "Küldetés típus",

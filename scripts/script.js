@@ -1566,7 +1566,6 @@ document.addEventListener('DOMContentLoaded', initMenu);
 
 
 /*
-
 <img src="https://static.wikia.nocookie.net/warframe/images/6/63/TennoIcon.png/revision/latest/scale-to-width-down/32?cb=20230104015820"></img>
 <img src="https://static.wikia.nocookie.net/warframe/images/8/8a/IconGrineerOn.png/revision/latest/scale-to-width-down/32?cb=20221231002702"></img>
 <img src="https://static.wikia.nocookie.net/warframe/images/b/b2/IconCorpusOn.png/revision/latest/scale-to-width-down/32?cb=20240906232445"></img>
@@ -1578,9 +1577,5 @@ document.addEventListener('DOMContentLoaded', initMenu);
 <img src="https://static.wikia.nocookie.net/warframe/images/2/2a/IconOrokinOn.png/revision/latest/scale-to-width-down/32?cb=20210826000807"></img>
 <img src="https://static.wikia.nocookie.net/warframe/images/e/ef/ReputationLarge.png/revision/latest/scale-to-width-down/32?cb=20141029201704"></img>
 <img src="https://static.wikia.nocookie.net/warframe/images/c/c0/IconWild.png/revision/latest/scale-to-width-down/32?cb=20210821074945"></img>
-
-
-
-https://api.tenno.tools/worldstate/pc
 */
 
