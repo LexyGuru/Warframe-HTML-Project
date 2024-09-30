@@ -46,5 +46,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <script src="scripts/localization.js"></script>
 <script src="scripts/script.js"></script>
+<script>function updateUITranslations() {
+        document.querySelectorAll('[data-translation-key]').forEach(element => {
+const key = element.getAttribute('data-translation-key');
+element.textContent = window.Localization.getTranslation(key);
+});
+}
+
+// Hívjuk meg ezt a függvényt az oldal betöltésekor és nyelvváltáskor
+document.addEventListener('DOMContentLoaded', updateUITranslations);</script>
 </body>
 </html>

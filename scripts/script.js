@@ -63,7 +63,7 @@ const CONFIG = {
 };
 
 const relevantFields = {
-    arbitration: ['node', 'enemy', 'type', 'expiry'],
+    arbitration: ['node', 'enemy', 'expiry'],
     invasions: ['node', 'desc', 'attackingFaction', 'defendingFaction', 'completion'],
     fissures: ['node', 'missionType', 'tier', 'expiry'],
     archonHunt: ['boss', 'faction', 'rewardPool', 'expiry', 'missions'],
@@ -355,6 +355,24 @@ function displaySelectedData(selectedKey) {
 
     try {
         let content = '';
+        switch (selectedKey) {
+            case 'alerts':
+                content = displayAlerts(data);
+                break;
+            // ... többi eset ...
+            default:
+                if (Array.isArray(data)) {
+                    content = data.map((item, index) => {
+                        const itemDiv = document.createElement('div');
+                        displayDataItem(item, selectedKey, itemDiv, index);
+                        return itemDiv.innerHTML;
+                    }).join('');
+                } else {
+                    const itemDiv = document.createElement('div');
+                    displayDataItem(data, selectedKey, itemDiv, 0);
+                    content = itemDiv.innerHTML;
+                }
+        }
 
         if (CONFIG.CYCLE_ENDPOINTS.includes(selectedKey)) {
             content = displayCycle(data, selectedKey, 0);
@@ -407,11 +425,15 @@ function displaySelectedData(selectedKey) {
             content = displaySimaris(data, 0);
         }
 
-        // Animáció hozzáadása
+        // Animáció hozzáadása és DOM frissítése
         displayArea.innerHTML = `<div class="fade-in slide-in">${content}</div>`;
 
-        // Visszaszámlálók inicializálása
-        console.log('Initializing countdowns');
+        // Visszaszámlálók inicializálása a DOM frissítése után
+        setTimeout(() => {
+            initializeCountdowns(displayArea, selectedKey);
+        }, 0);
+
+        /*console.log('Initializing countdowns');
         const countdownElements = displayArea.querySelectorAll('.countdown');
         console.log(`Found ${countdownElements.length} countdown elements`);
         const now = new Date();
@@ -427,7 +449,7 @@ function displaySelectedData(selectedKey) {
                     el.textContent = timeValue.includes('Ends in') ? timeValue : window.Localization.getTranslation('expired');
                 }
             }
-        });
+        });*/
 
         if (CONFIG.CYCLE_ENDPOINTS.includes(selectedKey)) {
             updateCycleCountdown(`${selectedKey}-countdown`, data.timeLeft);
@@ -562,6 +584,7 @@ function displaySyndicateMissions(item, index) {
 }
 
 function displayEvents(item, index) {
+    const expiryDate = parseDate(item.expiry);
     return `
         <p><strong>Description:</strong> ${item.description}</p>
         <p><strong>Node:</strong> ${item.node}</p>
@@ -571,6 +594,20 @@ function displayEvents(item, index) {
         <ul>
             ${item.rewards.map(reward => `<li>${reward.asString}</li>`).join('')}
         </ul>
+    `;
+}
+
+function displayArbitation(item, index) {
+    const expiryDate = parseDate(item.expiry);
+    return `
+        ${items.map((alert, index) => `
+            <div class="arbitation-item" id="arbitation-item-${index}">
+                <p><strong>Enemy:</strong> ${item.enemy}</p>
+                <p><strong>Node:</strong> ${item.node}</p>
+                <p><strong>Activation:</strong> ${formatDate(parseDate(item.activation))}</p>
+                <p><strong>Expiry:</strong> <span id="arbitation-countdown-${index}" class="countdown" data-time="${item.expiry}">${formatDate(parseDate(item.expiry))}</span></p>
+            </div>
+        `).join('')}
     `;
 }
 
@@ -779,41 +816,45 @@ function displayInvasions(items) {
 }
 
 function displayAlerts(items) {
-    if (!Array.isArray(items) || items.length === 0) {
-        console.warn('Alerts üres vagy nem tömb formátumban érkezett:', items);
+    // Biztosítjuk, hogy az items mindig tömb legyen
+    const alertsArray = Array.isArray(items) ? items : [items];
+
+    if (alertsArray.length === 0) {
+        console.warn('Alerts üres vagy érvénytelen formátumban érkezett:', items);
         return '<p>Nincs elérhető riadó.</p>';
     }
 
-    return items.map((alert, index) => `
-        <div class="alert-item">
-            <p><strong>Küldetés:</strong> ${alert.mission?.type} on ${alert.mission?.node}</p>
-            <p><strong>Frakció:</strong> ${alert.mission?.faction}</p>
-            <p><strong>Jutalom:</strong> ${alert.mission?.reward?.asString}</p>
-            <p><strong>Lejár:</strong> <span id="alert-countdown-${index}" class="countdown" data-time="${alert.expiry}">${alert.expiry}</span></p>
+    return `
+        <div class="alerts-container">
+            <h2>Riasztások</h2>
+            ${alertsArray.map((alert, index) => `
+                <div class="alert-item">
+                    <p><strong>Küldetés:</strong> ${alert.mission?.type} on ${alert.mission?.node}</p>
+                    <p><strong>Frakció:</strong> ${alert.mission?.faction}</p>
+                    <p><strong>Jutalom:</strong> ${alert.mission?.reward?.asString}</p>
+                    <p><strong>Lejár:</strong> <span id="alert-countdown-${index}" class="countdown" data-time="${alert.expiry}">${alert.expiry}</span></p>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
 
-function initializeCountdowns(container) {
+function initializeCountdowns(container, selectedKey) {
     console.log('Initializing countdowns');
     const countdownElements = container.querySelectorAll('.countdown');
     console.log(`Found ${countdownElements.length} countdown elements`);
     const now = new Date();
-    countdownElements.forEach((el) => {
+    countdownElements.forEach((el, index) => {
         const timeValue = el.dataset.time;
-        const elementId = el.id || 'unnamed-element';
         if (timeValue) {
             const parsedDate = parseDate(timeValue);
-            console.log(`Parsing date for ${elementId}: ${timeValue} => ${parsedDate}`);
             if (parsedDate && parsedDate > now) {
-                console.log(`Initializing countdown for ${elementId} with time ${timeValue}`);
-                updateEventCountdown(elementId, parsedDate, el.dataset.type);
+                console.log(`Initializing countdown for element ${el.id || index} with time ${timeValue}`);
+                updateEventCountdown(el, parsedDate, selectedKey);
             } else {
-                console.log(`Skipping countdown for past or invalid date: ${elementId}: ${timeValue}`);
-                el.textContent = window.Localization.getTranslation('expired');
+                console.log(`Skipping countdown for past date or invalid date: ${el.id || index}: ${timeValue}`);
+                el.textContent = timeValue.includes('Ends in') ? timeValue : window.Localization.getTranslation('expired');
             }
-        } else {
-            console.warn(`No time value found for element: ${elementId}`);
         }
     });
 }
@@ -971,6 +1012,9 @@ function displayDataItem(item, type, container, index) {
             case 'events':
                 content += displayEvents(item, index);
                 break;
+            case 'arbitation':
+                content += displayArbitation(Array.isArray(item) ? item : [item], index);
+                break;
             case 'nightwave':
                 content += displayNightwave(item, index);
                 break;
@@ -978,7 +1022,7 @@ function displayDataItem(item, type, container, index) {
                 content += displaySteelPath(item, index);
                 break;
             case 'alerts':
-                content += displayAlerts(Array.isArray(item) ? item : [item], index);
+                content += displayAlerts(item);
                 break;
             case 'invasions':
                 content += displayInvasions(Array.isArray(item) ? item : [item], index);
@@ -1119,15 +1163,21 @@ function updateCycleDisplay(cycleType) {
     }
 }
 
-function updateEventCountdown(elementId, endTime, type) {
-    const element = document.getElementById(elementId);
+function updateEventCountdown(elementOrId, endTime, type) {
+    let element;
+    if (typeof elementOrId === 'string') {
+        element = document.getElementById(elementOrId);
+    } else if (elementOrId instanceof Element) {
+        element = elementOrId;
+    }
+
     if (!element) {
-        console.warn(`Nem található elem a következő ID-val: ${elementId}, Type: ${type}`);
+        console.warn(`Nem található elem: ${elementOrId}, Type: ${type}`);
         return;
     }
 
     if (!(endTime instanceof Date) || isNaN(endTime.getTime())) {
-        console.warn(`Érvénytelen végidő: ${endTime}, ElementId: ${elementId}`);
+        console.warn(`Érvénytelen végidő: ${endTime}, ElementId: ${element.id}`);
         element.textContent = window.Localization.getTranslation('invalidDate');
         return;
     }
@@ -1137,7 +1187,7 @@ function updateEventCountdown(elementId, endTime, type) {
         const timeLeft = endTime.getTime() - now.getTime();
 
         if (timeLeft <= 0) {
-            console.log(`Countdown expired for ${elementId}`);
+            console.log(`Countdown expired for ${element.id || 'element'}`);
             element.textContent = window.Localization.getTranslation('expired');
             if (type && typeof refreshEndpoint === 'function') {
                 console.log(`Refreshing endpoint for ${type}`);
@@ -1155,7 +1205,7 @@ function updateEventCountdown(elementId, endTime, type) {
         requestAnimationFrame(updateTime);
     }
 
-    console.log(`Starting countdown for ${elementId}, End time: ${endTime}`);
+    console.log(`Starting countdown for ${element.id || 'element'}, End time: ${endTime}`);
     updateTime();
 }
 
